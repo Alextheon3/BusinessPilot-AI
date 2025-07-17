@@ -39,7 +39,12 @@
       "Bash(dir)",
       "Bash(cmd /c:*)",
       "Bash(set PORT=3005)",
-      "WebFetch(domain:localhost)"
+      "WebFetch(domain:localhost)",
+      "Bash(npm install:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(npm run:*)",
+      "Bash(grep:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": []
   }

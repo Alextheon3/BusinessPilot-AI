@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
 import { 
@@ -13,12 +13,19 @@ import {
   EnvelopeIcon,
   DevicePhoneMobileIcon,
   GlobeAltIcon,
-  TagIcon
+  TagIcon,
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
+  CurrencyEuroIcon
 } from '@heroicons/react/24/outline';
 import { api } from '../services/api';
 import { Campaign, CampaignCreate } from '../types';
+import PageLayout from '../components/Common/PageLayout';
+import GlassCard from '../components/Common/GlassCard';
+import { useTheme } from '../contexts/ThemeContext';
 
 const Marketing: React.FC = () => {
+  const { isDarkMode } = useTheme();
   const [showCreateCampaign, setShowCreateCampaign] = useState(false);
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [showContentGenerator, setShowContentGenerator] = useState(false);
@@ -26,48 +33,48 @@ const Marketing: React.FC = () => {
 
   const queryClient = useQueryClient();
 
-  // Mock campaigns data
+  // Mock campaigns data - Greek localized
   const campaigns = [
     {
       id: 1,
-      name: 'Spring Coffee Special',
+      name: 'Ειδική Προσφορά Άνοιξη',
       type: 'email',
       status: 'active',
-      target_audience: 'Regular Customers',
-      content: 'Enjoy 20% off all coffee beans this spring! Limited time offer.',
+      target_audience: 'Μόνιμοι Πελάτες',
+      content: 'Απολαύστε 20% έκπτωση σε όλα τα κόκκους καφέ αυτήν την άνοιξη! Περιορισμένη προσφορά.',
       scheduled_date: '2024-01-15',
       created_at: '2024-01-15T00:00:00',
       updated_at: '2024-01-15T00:00:00'
     },
     {
       id: 2,
-      name: 'New Menu Launch',
+      name: 'Λανσάρισμα Νέου Μενού',
       type: 'social',
       status: 'scheduled',
-      target_audience: 'All Customers',
-      content: 'Exciting new menu items coming soon! Fresh smoothies and healthy options.',
+      target_audience: 'Όλοι οι Πελάτες',
+      content: 'Συναρπαστικά νέα είδη μενού έρχονται σύντομα! Φρέσκα smoothies και υγιεινές επιλογές.',
       scheduled_date: '2024-01-25',
       created_at: '2024-01-20T00:00:00',
       updated_at: '2024-01-20T00:00:00'
     },
     {
       id: 3,
-      name: 'Customer Loyalty SMS',
+      name: 'SMS Πιστότητας Πελατών',
       type: 'sms',
       status: 'completed',
-      target_audience: 'VIP Customers',
-      content: 'Thank you for being a loyal customer! Here\'s a special 15% discount code: LOYAL15',
+      target_audience: 'VIP Πελάτες',
+      content: 'Ευχαριστούμε που είστε πιστός πελάτης! Ιδού ένας ειδικός κωδικός έκπτωσης 15%: LOYAL15',
       sent_date: '2024-01-01',
       created_at: '2024-01-01T00:00:00',
       updated_at: '2024-01-01T00:00:00'
     },
     {
       id: 4,
-      name: 'Weekend Specials',
+      name: 'Προσφορές Σαββατοκύριακου',
       type: 'email',
       status: 'active',
-      target_audience: 'Weekend Customers',
-      content: 'Weekend brunch specials! 2-for-1 pastries and discounted coffee.',
+      target_audience: 'Πελάτες Σαββατοκύριακου',
+      content: 'Ειδικές προσφορές brunch σαββατοκύριακου! 2-για-1 γλυκά και έκπτωση στον καφέ.',
       scheduled_date: '2024-01-20',
       created_at: '2024-01-20T00:00:00',
       updated_at: '2024-01-20T00:00:00'
@@ -77,24 +84,24 @@ const Marketing: React.FC = () => {
   const suggestions = [
     {
       id: 1,
-      title: 'Valentine\'s Day Campaign',
-      description: 'Create a romantic coffee date special for couples',
+      title: 'Καμπάνια Αγίου Βαλεντίνου',
+      description: 'Δημιούργηση ρομαντικής προσφοράς για ζευγάρια',
       type: 'seasonal',
       urgency: 'high',
       estimated_budget: 400
     },
     {
       id: 2,
-      title: 'Student Discount Program',
-      description: 'Target local students with special pricing',
+      title: 'Πρόγραμμα Έκπτωσης Φοιτητών',
+      description: 'Στόχευση τοπικών φοιτητών με ειδικές τιμές',
       type: 'demographic',
       urgency: 'medium',
       estimated_budget: 250
     },
     {
       id: 3,
-      title: 'Morning Rush Hour Push',
-      description: 'Promote quick service during peak hours',
+      title: 'Πρωινή Ώρα Αιχμής',
+      description: 'Προώθηση γρήγορης εξυπηρέτησης στις ώρες αιχμής',
       type: 'time-based',
       urgency: 'low',
       estimated_budget: 300
@@ -174,13 +181,34 @@ const Marketing: React.FC = () => {
         return 'bg-blue-100 text-blue-800';
       case 'draft':
         return 'bg-gray-100 text-gray-800';
+      case 'active':
+        return 'bg-emerald-100 text-emerald-800';
+      case 'completed':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
 
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'sent':
+        return 'Εστάλη';
+      case 'scheduled':
+        return 'Προγραμματισμένη';
+      case 'draft':
+        return 'Προσχέδιο';
+      case 'active':
+        return 'Ενεργή';
+      case 'completed':
+        return 'Ολοκληρωμένη';
+      default:
+        return status;
+    }
+  };
+
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('el-GR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -190,70 +218,134 @@ const Marketing: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Marketing</h1>
-        <div className="flex space-x-2">
+    <PageLayout
+      title="Διαχείριση Μάρκετινγκ"
+      subtitle="Δημιουργία και διαχείριση καμπανιών μάρκετινγκ"
+      icon={<MegaphoneIcon className="w-6 h-6 text-white" />}
+      actions={
+        <div className="flex items-center space-x-3">
           <button
             onClick={() => setShowContentGenerator(true)}
-            className="flex items-center px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
           >
-            <SparklesIcon className="w-4 h-4 mr-2" />
-            AI Content Generator
+            <SparklesIcon className="w-5 h-5" />
+            <span>AI Γεννήτρια Περιεχομένου</span>
           </button>
           <button
             onClick={() => setShowCreateCampaign(true)}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
           >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Create Campaign
+            <PlusIcon className="w-5 h-5" />
+            <span>Νέα Καμπάνια</span>
           </button>
         </div>
+      }
+    >
+      {/* Marketing Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <GlassCard>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Ενεργές Καμπάνιες
+              </p>
+              <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {campaigns.filter(c => c.status === 'active').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <ChartBarIcon className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Ολοκληρωμένες
+              </p>
+              <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {campaigns.filter(c => c.status === 'completed').length}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+              <ArrowTrendingUpIcon className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </GlassCard>
+
+        <GlassCard>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                Προϋπολογισμός
+              </p>
+              <p className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                €{suggestions.reduce((sum, s) => sum + s.estimated_budget, 0)}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+              <CurrencyEuroIcon className="w-6 h-6 text-white" />
+            </div>
+          </div>
+        </GlassCard>
       </div>
 
       {/* Marketing Suggestions */}
       {suggestions.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">📈 Marketing Suggestions</h3>
+        <GlassCard className="mb-6">
+          <h3 className={`text-lg font-semibold mb-4 ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            📈 Προτάσεις Μάρκετινγκ
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {suggestions.map((suggestion: any, index: number) => (
-              <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
+              <div key={index} className={`border rounded-xl p-4 transition-all duration-200 hover:scale-105 ${
+                isDarkMode 
+                  ? 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/50' 
+                  : 'border-slate-200 bg-white/50 hover:bg-white/80'
+              }`}>
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-gray-900">{suggestion.title}</h4>
+                  <h4 className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    {suggestion.title}
+                  </h4>
                   <span className={`px-2 py-1 text-xs rounded-full ${
                     suggestion.urgency === 'high' ? 'bg-red-100 text-red-800' :
                     suggestion.urgency === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                     'bg-green-100 text-green-800'
                   }`}>
-                    {suggestion.urgency}
+                    {suggestion.urgency === 'high' ? 'Υψηλή' : 
+                     suggestion.urgency === 'medium' ? 'Μεσαία' : 'Χαμηλή'}
                   </span>
                 </div>
-                <p className="text-sm text-gray-600 mb-3">{suggestion.description}</p>
+                <p className={`text-sm mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  {suggestion.description}
+                </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray-500">
-                    Impact: {suggestion.estimated_impact}
+                  <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-slate-500'}`}>
+                    Προϋπολογισμός: €{suggestion.estimated_budget}
                   </span>
                   <button
                     onClick={() => {
                       setShowCreateCampaign(true);
-                      // Pre-fill form with suggestion data
                     }}
-                    className="text-blue-600 hover:text-blue-800 text-sm"
+                    className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                   >
-                    Create Campaign
+                    Δημιουργία Καμπάνιας
                   </button>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </GlassCard>
       )}
 
       {/* Campaigns Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Campaigns</h3>
+      <GlassCard>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            Καμπάνιες Μάρκετινγκ
+          </h3>
         </div>
         <div className="overflow-x-auto">
           {isLoading ? (
@@ -261,77 +353,81 @@ const Marketing: React.FC = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Campaign
+            <table className="min-w-full">
+              <thead>
+                <tr className={`border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Καμπάνια
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Τύπος
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Κατάσταση
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Created
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Δημιουργήθηκε
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Ενέργειες
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
                 {campaigns.map((campaign: Campaign) => (
-                  <tr key={campaign.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
+                  <tr key={campaign.id} className={`transition-colors duration-200 ${isDarkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg">
                             {getCampaignIcon(campaign.type)}
                           </div>
                         </div>
                         <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">{campaign.name}</div>
-                          <div className="text-sm text-gray-500">{campaign.target_audience}</div>
+                          <div className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                            {campaign.name}
+                          </div>
+                          <div className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                            {campaign.target_audience}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 capitalize">
                         {campaign.type}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-4 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(campaign.status)}`}>
-                        {campaign.status}
+                        {getStatusText(campaign.status)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className={`px-4 py-4 whitespace-nowrap text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                       {formatDate(campaign.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-4 py-4 whitespace-nowrap text-sm">
                       <div className="flex items-center space-x-2">
                         <button
                           onClick={() => setSelectedCampaign(campaign)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 transition-colors duration-200"
                         >
                           <EyeIcon className="w-4 h-4" />
                         </button>
                         {campaign.status === 'draft' && (
                           <>
-                            <button className="text-green-600 hover:text-green-900">
+                            <button className="text-green-600 hover:text-green-900 transition-colors duration-200">
                               <PencilIcon className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => sendCampaignMutation.mutate(campaign.id)}
-                              className="text-purple-600 hover:text-purple-900"
+                              className="text-purple-600 hover:text-purple-900 transition-colors duration-200"
                             >
                               <PaperAirplaneIcon className="w-4 h-4" />
                             </button>
                           </>
                         )}
-                        <button className="text-red-600 hover:text-red-900">
+                        <button className="text-red-600 hover:text-red-900 transition-colors duration-200">
                           <TrashIcon className="w-4 h-4" />
                         </button>
                       </div>
@@ -342,7 +438,32 @@ const Marketing: React.FC = () => {
             </table>
           )}
         </div>
-      </div>
+      </GlassCard>
+
+      {/* Create Campaign Modal */}
+      {showCreateCampaign && (
+        <CreateCampaignModal
+          onClose={() => setShowCreateCampaign(false)}
+          onSubmit={(campaignData) => createCampaignMutation.mutate(campaignData)}
+          isLoading={createCampaignMutation.isPending}
+          generatedContent={generatedContent}
+        />
+      )}
+
+      {/* Content Generator Modal */}
+      {showContentGenerator && (
+        <ContentGeneratorModal
+          onClose={() => setShowContentGenerator(false)}
+          onGenerate={(contentType) => generateContentMutation.mutate(contentType)}
+          isLoading={generateContentMutation.isPending}
+          generatedContent={generatedContent}
+          onUseContent={(content) => {
+            setGeneratedContent(content);
+            setShowContentGenerator(false);
+            setShowCreateCampaign(true);
+          }}
+        />
+      )}
 
       {/* Create Campaign Modal */}
       {showCreateCampaign && (
@@ -376,7 +497,7 @@ const Marketing: React.FC = () => {
           onClose={() => setSelectedCampaign(null)}
         />
       )}
-    </div>
+    </PageLayout>
   );
 };
 
@@ -403,37 +524,41 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
   }, [generatedContent, setValue]);
 
   const campaignTypes = [
-    { value: 'email', label: 'Email Campaign', icon: EnvelopeIcon },
-    { value: 'sms', label: 'SMS Campaign', icon: DevicePhoneMobileIcon },
-    { value: 'social', label: 'Social Media', icon: GlobeAltIcon },
-    { value: 'promotion', label: 'Promotion', icon: TagIcon }
+    { value: 'email', label: 'Email Καμπάνια', icon: EnvelopeIcon },
+    { value: 'sms', label: 'SMS Καμπάνια', icon: DevicePhoneMobileIcon },
+    { value: 'social', label: 'Κοινωνικά Δίκτυα', icon: GlobeAltIcon },
+    { value: 'promotion', label: 'Προσφορά', icon: TagIcon }
   ];
 
   const targetAudiences = [
-    'All Customers',
-    'Repeat Customers',
-    'New Customers',
-    'High-Value Customers',
-    'Local Customers',
-    'Custom Segment'
+    'Όλοι οι Πελάτες',
+    'Επαναλαμβανόμενοι Πελάτες',
+    'Νέοι Πελάτες',
+    'Πελάτες Υψηλής Αξίας',
+    'Τοπικοί Πελάτες',
+    'Προσαρμοσμένο Κοινό'
   ];
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Create New Campaign</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20 dark:border-slate-700/50">
+        <div className="px-6 py-4 border-b border-white/20 dark:border-slate-700/50">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Δημιουργία Νέας Καμπάνιας
+          </h3>
         </div>
         
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6">
           {/* Campaign Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Campaign Name *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Όνομα Καμπάνιας *
+            </label>
             <input
               type="text"
-              {...register('name', { required: 'Campaign name is required' })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Enter campaign name"
+              {...register('name', { required: 'Το όνομα καμπάνιας είναι υποχρεωτικό' })}
+              className="mt-1 block w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
+              placeholder="Εισάγετε το όνομα της καμπάνιας"
             />
             {errors.name && (
               <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -442,18 +567,20 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
           {/* Campaign Type */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Campaign Type *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Τύπος Καμπάνιας *
+            </label>
             <div className="mt-2 grid grid-cols-2 gap-3">
               {campaignTypes.map(({ value, label, icon: Icon }) => (
-                <label key={value} className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                <label key={value} className="flex items-center p-4 border border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-white/70 dark:hover:bg-slate-800/70 transition-all duration-200 backdrop-blur-sm">
                   <input
                     type="radio"
                     value={value}
-                    {...register('type', { required: 'Campaign type is required' })}
+                    {...register('type', { required: 'Ο τύπος καμπάνιας είναι υποχρεωτικός' })}
                     className="sr-only"
                   />
-                  <Icon className="w-5 h-5 text-gray-500 mr-3" />
-                  <span className="text-sm font-medium text-gray-900">{label}</span>
+                  <Icon className="w-5 h-5 text-slate-500 dark:text-slate-400 mr-3" />
+                  <span className="text-sm font-medium text-slate-900 dark:text-white">{label}</span>
                 </label>
               ))}
             </div>
@@ -464,12 +591,14 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
           {/* Target Audience */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Target Audience *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Στοχευόμενο Κοινό *
+            </label>
             <select
-              {...register('target_audience', { required: 'Target audience is required' })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              {...register('target_audience', { required: 'Το στοχευόμενο κοινό είναι υποχρεωτικό' })}
+              className="mt-1 block w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white"
             >
-              <option value="">Select target audience</option>
+              <option value="">Επιλέξτε στοχευόμενο κοινό</option>
               {targetAudiences.map((audience) => (
                 <option key={audience} value={audience}>
                   {audience}
@@ -483,16 +612,18 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
           {/* Campaign Content */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Campaign Content *</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Περιεχόμενο Καμπάνιας *
+            </label>
             <textarea
-              {...register('content', { required: 'Campaign content is required' })}
+              {...register('content', { required: 'Το περιεχόμενο καμπάνιας είναι υποχρεωτικό' })}
               rows={campaignType === 'sms' ? 3 : 6}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400"
               placeholder={
-                campaignType === 'email' ? 'Enter email content...' :
-                campaignType === 'sms' ? 'Enter SMS message (160 characters max)...' :
-                campaignType === 'social' ? 'Enter social media post...' :
-                'Enter campaign content...'
+                campaignType === 'email' ? 'Εισάγετε περιεχόμενο email...' :
+                campaignType === 'sms' ? 'Εισάγετε μήνυμα SMS (μέγιστο 160 χαρακτήρες)...' :
+                campaignType === 'social' ? 'Εισάγετε ανάρτηση για κοινωνικά δίκτυα...' :
+                'Εισάγετε περιεχόμενο καμπάνιας...'
               }
             />
             {errors.content && (
@@ -502,11 +633,13 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
 
           {/* Schedule Date */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Schedule Date (Optional)</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Ημερομηνία Προγραμματισμού (Προαιρετικό)
+            </label>
             <input
               type="datetime-local"
               {...register('scheduled_date')}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+              className="mt-1 block w-full border border-slate-300 dark:border-slate-600 rounded-xl px-4 py-3 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 dark:text-white"
             />
           </div>
 
@@ -515,16 +648,16 @@ const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-6 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-200 backdrop-blur-sm"
             >
-              Cancel
+              Ακύρωση
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
             >
-              {isLoading ? 'Creating...' : 'Create Campaign'}
+              {isLoading ? 'Δημιουργία...' : 'Δημιουργία Καμπάνιας'}
             </button>
           </div>
         </form>
@@ -551,27 +684,31 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
   const [selectedType, setSelectedType] = useState('email');
 
   const contentTypes = [
-    { value: 'email', label: 'Email Campaign', description: 'Generate email marketing content' },
-    { value: 'sms', label: 'SMS Campaign', description: 'Generate SMS marketing messages' },
-    { value: 'social', label: 'Social Media', description: 'Generate social media posts' },
-    { value: 'promotion', label: 'Promotion', description: 'Generate promotional content' }
+    { value: 'email', label: 'Email Καμπάνια', description: 'Δημιουργία περιεχομένου email μάρκετινγκ' },
+    { value: 'sms', label: 'SMS Καμπάνια', description: 'Δημιουργία μηνυμάτων SMS μάρκετινγκ' },
+    { value: 'social', label: 'Κοινωνικά Δίκτυα', description: 'Δημιουργία αναρτήσεων για κοινωνικά δίκτυα' },
+    { value: 'promotion', label: 'Προσφορά', description: 'Δημιουργία προωθητικού περιεχομένου' }
   ];
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">AI Content Generator</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border border-white/20 dark:border-slate-700/50">
+        <div className="px-6 py-4 border-b border-white/20 dark:border-slate-700/50">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            AI Γεννήτρια Περιεχομένου
+          </h3>
         </div>
         
         <div className="p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Content Type Selection */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">Select Content Type</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                Επιλέξτε Τύπο Περιεχομένου
+              </label>
               <div className="space-y-2">
                 {contentTypes.map(({ value, label, description }) => (
-                  <label key={value} className="flex items-center p-3 border rounded-md cursor-pointer hover:bg-gray-50">
+                  <label key={value} className="flex items-center p-4 border border-slate-300 dark:border-slate-600 rounded-xl cursor-pointer hover:bg-white/70 dark:hover:bg-slate-800/70 transition-all duration-200 backdrop-blur-sm">
                     <input
                       type="radio"
                       value={value}
@@ -580,8 +717,8 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
                       className="mr-3"
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{label}</div>
-                      <div className="text-sm text-gray-500">{description}</div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-white">{label}</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">{description}</div>
                     </div>
                   </label>
                 ))}
@@ -590,17 +727,17 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
               <button
                 onClick={() => onGenerate(selectedType)}
                 disabled={isLoading}
-                className="mt-4 w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                className="mt-4 w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
               >
                 {isLoading ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Generating...
+                    Δημιουργία...
                   </>
                 ) : (
                   <>
                     <SparklesIcon className="w-4 h-4 mr-2" />
-                    Generate Content
+                    Δημιουργία Περιεχομένου
                   </>
                 )}
               </button>
@@ -608,32 +745,34 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
 
             {/* Generated Content Display */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">Generated Content</label>
-              <div className="border rounded-md p-4 bg-gray-50 min-h-64">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                Δημιουργημένο Περιεχόμενο
+              </label>
+              <div className="border border-slate-300 dark:border-slate-600 rounded-xl p-4 bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm min-h-64">
                 {generatedContent ? (
                   <div className="space-y-4">
                     {generatedContent.subject && (
                       <div>
-                        <h4 className="font-medium text-gray-900">Subject:</h4>
-                        <p className="text-gray-700">{generatedContent.subject}</p>
+                        <h4 className="font-medium text-slate-900 dark:text-white">Θέμα:</h4>
+                        <p className="text-slate-700 dark:text-slate-300">{generatedContent.subject}</p>
                       </div>
                     )}
                     <div>
-                      <h4 className="font-medium text-gray-900">Content:</h4>
-                      <div className="text-gray-700 whitespace-pre-wrap">
-                        {generatedContent.content || generatedContent.email_content || generatedContent.social_content || 'No content generated'}
+                      <h4 className="font-medium text-slate-900 dark:text-white">Περιεχόμενο:</h4>
+                      <div className="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">
+                        {generatedContent.content || generatedContent.email_content || generatedContent.social_content || 'Δεν δημιουργήθηκε περιεχόμενο'}
                       </div>
                     </div>
                     {generatedContent.call_to_action && (
                       <div>
-                        <h4 className="font-medium text-gray-900">Call to Action:</h4>
-                        <p className="text-gray-700">{generatedContent.call_to_action}</p>
+                        <h4 className="font-medium text-slate-900 dark:text-white">Κάλεσμα σε Δράση:</h4>
+                        <p className="text-slate-700 dark:text-slate-300">{generatedContent.call_to_action}</p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <div className="flex items-center justify-center h-32 text-gray-500">
-                    Click "Generate Content" to create AI-powered marketing content
+                  <div className="flex items-center justify-center h-32 text-slate-500 dark:text-slate-400">
+                    Κάντε κλικ στο "Δημιουργία Περιεχομένου" για να δημιουργήσετε περιεχόμενο μάρκετινγκ με AI
                   </div>
                 )}
               </div>
@@ -641,9 +780,9 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
               {generatedContent && (
                 <button
                   onClick={() => onUseContent(generatedContent)}
-                  className="mt-4 w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                  className="mt-4 w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
                 >
-                  Use This Content
+                  Χρήση Αυτού του Περιεχομένου
                 </button>
               )}
             </div>
@@ -653,9 +792,9 @@ const ContentGeneratorModal: React.FC<ContentGeneratorModalProps> = ({
           <div className="flex justify-end mt-6">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="px-6 py-3 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-800/50 transition-all duration-200 backdrop-blur-sm"
             >
-              Close
+              Κλείσιμο
             </button>
           </div>
         </div>
@@ -671,59 +810,79 @@ interface CampaignDetailsModalProps {
 
 const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ campaign, onClose }) => {
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Campaign Details</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-white/20 dark:border-slate-700/50">
+        <div className="px-6 py-4 border-b border-white/20 dark:border-slate-700/50">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+            Λεπτομέρειες Καμπάνιας
+          </h3>
         </div>
         
         <div className="p-6 space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Campaign Name</label>
-            <p className="mt-1 text-sm text-gray-900">{campaign.name}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Όνομα Καμπάνιας
+            </label>
+            <p className="mt-1 text-sm text-slate-900 dark:text-white">{campaign.name}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Type</label>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{campaign.type}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Τύπος
+            </label>
+            <p className="mt-1 text-sm text-slate-900 dark:text-white capitalize">{campaign.type}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Target Audience</label>
-            <p className="mt-1 text-sm text-gray-900">{campaign.target_audience}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Στοχευόμενο Κοινό
+            </label>
+            <p className="mt-1 text-sm text-slate-900 dark:text-white">{campaign.target_audience}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Status</label>
-            <p className="mt-1 text-sm text-gray-900 capitalize">{campaign.status}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Κατάσταση
+            </label>
+            <p className="mt-1 text-sm text-slate-900 dark:text-white capitalize">{campaign.status}</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Content</label>
-            <div className="mt-1 p-3 border rounded-md bg-gray-50">
-              <p className="text-sm text-gray-900 whitespace-pre-wrap">{campaign.content}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Περιεχόμενο
+            </label>
+            <div className="mt-1 p-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 backdrop-blur-sm">
+              <p className="text-sm text-slate-900 dark:text-white whitespace-pre-wrap">{campaign.content}</p>
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Created</label>
-            <p className="mt-1 text-sm text-gray-900">{new Date(campaign.created_at).toLocaleString()}</p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+              Δημιουργήθηκε
+            </label>
+            <p className="mt-1 text-sm text-slate-900 dark:text-white">
+              {new Date(campaign.created_at).toLocaleString('el-GR')}
+            </p>
           </div>
 
           {campaign.sent_date && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Sent</label>
-              <p className="mt-1 text-sm text-gray-900">{new Date(campaign.sent_date).toLocaleString()}</p>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                Εστάλη
+              </label>
+              <p className="mt-1 text-sm text-slate-900 dark:text-white">
+                {new Date(campaign.sent_date).toLocaleString('el-GR')}
+              </p>
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200">
+        <div className="px-6 py-4 border-t border-white/20 dark:border-slate-700/50">
           <button
             onClick={onClose}
-            className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+            className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"
           >
-            Close
+            Κλείσιμο
           </button>
         </div>
       </div>

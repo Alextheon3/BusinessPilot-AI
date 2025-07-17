@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-hot-toast';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useTheme } from '../contexts/ThemeContext';
 import { 
   PlusIcon, 
   EyeIcon, 
@@ -9,21 +11,31 @@ import {
   ChartBarIcon,
   CalendarIcon,
   CreditCardIcon,
-  UserIcon
+  UserIcon,
+  BanknotesIcon,
+  ArrowTrendingUpIcon,
+  ArrowTrendingDownIcon,
+  ArrowPathIcon,
+  FunnelIcon,
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { api } from '../services/api';
 import { Sale, SaleCreate, SaleItem } from '../types';
-import { formatCurrency } from '../utils/formatters';
+import PageLayout from '../components/Common/PageLayout';
+import GlassCard from '../components/Common/GlassCard';
 
 interface SalesPageProps {}
 
 const Sales: React.FC<SalesPageProps> = () => {
+  const { t } = useLanguage();
+  const { isDarkMode } = useTheme();
   const [showAddSale, setShowAddSale] = useState(false);
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null);
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -82,7 +94,7 @@ const Sales: React.FC<SalesPageProps> = () => {
     average_sale: 45.16,
     growth_rate: 12.5,
     top_products: [
-      { product_name: 'Coffee Beans', total_quantity: 5, total_revenue: 37.50 },
+      { product_name: 'Coffee Beans', total_quantity: 5, total_revenue: 75.00 },
       { product_name: 'Smoothies', total_quantity: 3, total_revenue: 50.28 },
       { product_name: 'Pastries', total_quantity: 7, total_revenue: 25.85 }
     ]
@@ -106,7 +118,7 @@ const Sales: React.FC<SalesPageProps> = () => {
     }
   });
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrencyLocal = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -126,161 +138,293 @@ const Sales: React.FC<SalesPageProps> = () => {
   const getPaymentMethodIcon = (method: string) => {
     switch (method.toLowerCase()) {
       case 'credit_card':
-        return <CreditCardIcon className="w-4 h-4" />;
+        return <CreditCardIcon className="w-4 h-4 text-blue-500" />;
       case 'cash':
-        return <span className="w-4 h-4 text-green-600">💵</span>;
+        return <BanknotesIcon className="w-4 h-4 text-green-500" />;
       case 'debit_card':
-        return <CreditCardIcon className="w-4 h-4" />;
+        return <CreditCardIcon className="w-4 h-4 text-purple-500" />;
       default:
-        return <CreditCardIcon className="w-4 h-4" />;
+        return <CreditCardIcon className="w-4 h-4 text-gray-500" />;
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Sales</h1>
-        <button
-          onClick={() => setShowAddSale(true)}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
-          <PlusIcon className="w-4 h-4 mr-2" />
-          Add Sale
-        </button>
-      </div>
+  const refreshData = async () => {
+    setIsRefreshing(true);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+    setIsRefreshing(false);
+  };
 
-      {/* Date Range Filter */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex items-center space-x-2">
-            <CalendarIcon className="w-5 h-5 text-gray-500" />
-            <label className="text-sm font-medium text-gray-700">From:</label>
-            <input
-              type="date"
-              value={dateRange.start}
-              onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-            />
+  const MetricCard = ({ title, value, change, icon, color, trend }: any) => (
+    <GlassCard className="group">
+      <div className="flex items-center justify-between">
+        <div className="flex-1">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${color} shadow-lg`}>
+              {icon}
+            </div>
+            {change !== undefined && (
+              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                trend === 'up' 
+                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                  : trend === 'down' 
+                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400' 
+                  : 'bg-slate-100 text-slate-800 dark:bg-slate-800/30 dark:text-slate-400'
+              }`}>
+                {trend === 'up' ? (
+                  <ArrowTrendingUpIcon className="w-3 h-3" />
+                ) : trend === 'down' ? (
+                  <ArrowTrendingDownIcon className="w-3 h-3" />
+                ) : null}
+                <span>{Math.abs(change)}%</span>
+              </div>
+            )}
           </div>
-          <div className="flex items-center space-x-2">
-            <label className="text-sm font-medium text-gray-700">To:</label>
-            <input
-              type="date"
-              value={dateRange.end}
-              onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-              className="border border-gray-300 rounded-md px-3 py-1 text-sm"
-            />
+          <div className="space-y-1">
+            <h3 className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              {title}
+            </h3>
+            <p className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              {value}
+            </p>
           </div>
         </div>
       </div>
+    </GlassCard>
+  );
+
+  return (
+    <PageLayout
+      title={t('sales.title')}
+      subtitle={t('sales.subtitle')}
+      icon={<ChartBarIcon className="w-6 h-6 text-white" />}
+      actions={
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={refreshData}
+            disabled={isRefreshing}
+            className={`p-3 rounded-xl transition-all duration-200 ${
+              isDarkMode 
+                ? 'bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white' 
+                : 'bg-white/50 hover:bg-white text-slate-600 hover:text-slate-900'
+            } backdrop-blur-sm border border-white/20 dark:border-slate-700/50 disabled:opacity-50`}
+            title="Refresh data"
+          >
+            <ArrowPathIcon className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </button>
+          <button
+            onClick={() => setShowAddSale(true)}
+            className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+          >
+            <PlusIcon className="w-5 h-5" />
+            <span>{t('sales.addSale')}</span>
+          </button>
+        </div>
+      }
+    >
+      {/* Date Range Filter */}
+      <GlassCard>
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              <CalendarIcon className={`w-5 h-5 ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`} />
+              <label className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {t('sales.from')}
+              </label>
+              <input
+                type="date"
+                value={dateRange.start}
+                onChange={(e) => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                className={`px-3 py-2 text-sm rounded-lg border transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                    : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <label className={`text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {t('sales.to')}
+              </label>
+              <input
+                type="date"
+                value={dateRange.end}
+                onChange={(e) => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                className={`px-3 py-2 text-sm rounded-lg border transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                    : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              />
+            </div>
+          </div>
+          <div className="flex items-center space-x-2">
+            <button className={`p-2 rounded-lg transition-all duration-200 ${
+              isDarkMode 
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white' 
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            }`}>
+              <FunnelIcon className="w-4 h-4" />
+            </button>
+            <button className={`p-2 rounded-lg transition-all duration-200 ${
+              isDarkMode 
+                ? 'hover:bg-slate-800 text-slate-300 hover:text-white' 
+                : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+            }`}>
+              <ArrowDownTrayIcon className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </GlassCard>
 
       {/* Analytics Cards */}
-      {analytics && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Sales</p>
-                <p className="text-2xl font-bold text-gray-900">{analytics.total_sales}</p>
-              </div>
-              <ChartBarIcon className="w-8 h-8 text-blue-600" />
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(analytics.total_sales)}</p>
-              </div>
-              <span className="text-2xl">💰</span>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Average Sale</p>
-                <p className="text-2xl font-bold text-gray-900">{formatCurrency(analytics.average_sale)}</p>
-              </div>
-              <span className="text-2xl">📊</span>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Growth Rate</p>
-                <p className={`text-2xl font-bold ${analytics.growth_rate >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {analytics.growth_rate.toFixed(1)}%
-                </p>
-              </div>
-              <span className="text-2xl">{analytics.growth_rate >= 0 ? '📈' : '📉'}</span>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        <MetricCard
+          title={t('sales.totalSales')}
+          value={analytics.total_sales}
+          icon={<ChartBarIcon className="w-6 h-6 text-white" />}
+          color="from-blue-500 to-blue-600"
+        />
+        <MetricCard
+          title={t('sales.totalRevenue')}
+          value={formatCurrencyLocal(analytics.total_sales)}
+          change={analytics.growth_rate}
+          trend={analytics.growth_rate >= 0 ? 'up' : 'down'}
+          icon={<BanknotesIcon className="w-6 h-6 text-white" />}
+          color="from-green-500 to-green-600"
+        />
+        <MetricCard
+          title={t('sales.averageSale')}
+          value={formatCurrencyLocal(analytics.average_sale)}
+          icon={<UserIcon className="w-6 h-6 text-white" />}
+          color="from-purple-500 to-purple-600"
+        />
+        <MetricCard
+          title={t('sales.growthRate')}
+          value={`${analytics.growth_rate.toFixed(1)}%`}
+          trend={analytics.growth_rate >= 0 ? 'up' : 'down'}
+          icon={<ArrowTrendingUpIcon className="w-6 h-6 text-white" />}
+          color="from-indigo-500 to-indigo-600"
+        />
+      </div>
 
       {/* Sales Table */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Recent Sales</h3>
+      <GlassCard>
+        <div className={`flex items-center justify-between mb-6 pb-4 border-b ${
+          isDarkMode ? 'border-slate-700' : 'border-slate-200'
+        }`}>
+          <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+            {t('sales.recentSales')}
+          </h3>
+          <div className="flex items-center space-x-2">
+            <div className={`w-2 h-2 rounded-full ${isRefreshing ? 'bg-blue-500 animate-pulse' : 'bg-green-500'}`} />
+            <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              {isRefreshing ? t('sales.updating') : t('sales.live')}
+            </span>
+          </div>
         </div>
+        
         <div className="overflow-x-auto">
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Date
+            <table className="min-w-full">
+              <thead>
+                <tr className={`border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.date')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Customer
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.customer')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Items
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.items')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Payment
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.payment')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.total')}
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
+                  <th className={`px-6 py-3 text-left text-xs font-medium uppercase tracking-wider ${
+                    isDarkMode ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    {t('sales.actions')}
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {sales.map((sale: Sale) => (
-                  <tr key={sale.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+              <tbody className="space-y-2">
+                {sales.map((sale: Sale, index) => (
+                  <tr key={sale.id} className={`
+                    transition-all duration-200 hover:scale-[1.01] cursor-pointer
+                    ${isDarkMode ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50/50'}
+                  `}>
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-slate-300' : 'text-slate-900'
+                    }`}>
                       {formatDate(sale.created_at)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center">
-                        <UserIcon className="w-4 h-4 mr-2 text-gray-400" />
-                        {sale.customer_name || 'Walk-in Customer'}
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-slate-300' : 'text-slate-900'
+                    }`}>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold text-xs">
+                            {sale.customer_name?.charAt(0) || 'W'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium">{sale.customer_name || t('sales.walkInCustomer')}</p>
+                          {sale.customer_email && (
+                            <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {sale.customer_email}
+                            </p>
+                          )}
+                        </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {sale.items?.length || 0} items
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-slate-300' : 'text-slate-900'
+                    }`}>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                          <span className="text-white font-bold text-xs">{sale.items?.length || 0}</span>
+                        </div>
+                        <span>{t('sales.items')}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      <div className="flex items-center">
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm ${
+                      isDarkMode ? 'text-slate-300' : 'text-slate-900'
+                    }`}>
+                      <div className="flex items-center space-x-2">
                         {getPaymentMethodIcon(sale.payment_method)}
-                        <span className="ml-2 capitalize">{sale.payment_method.replace('_', ' ')}</span>
+                        <span className="capitalize">{sale.payment_method.replace('_', ' ')}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {formatCurrency(sale.total_amount)}
+                    <td className={`px-6 py-4 whitespace-nowrap text-sm font-bold ${
+                      isDarkMode ? 'text-white' : 'text-slate-900'
+                    }`}>
+                      {formatCurrencyLocal(sale.total_amount)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <button
                         onClick={() => setSelectedSale(sale)}
-                        className="text-blue-600 hover:text-blue-900 mr-3"
+                        className={`p-2 rounded-lg transition-all duration-200 ${
+                          isDarkMode 
+                            ? 'hover:bg-slate-700 text-slate-400 hover:text-white' 
+                            : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+                        }`}
                       >
                         <EyeIcon className="w-4 h-4" />
                       </button>
@@ -291,7 +435,7 @@ const Sales: React.FC<SalesPageProps> = () => {
             </table>
           )}
         </div>
-      </div>
+      </GlassCard>
 
       {/* Add Sale Modal */}
       {showAddSale && (
@@ -309,10 +453,11 @@ const Sales: React.FC<SalesPageProps> = () => {
           onClose={() => setSelectedSale(null)}
         />
       )}
-    </div>
+    </PageLayout>
   );
 };
 
+// Add Sale Modal Component with glassmorphism design
 interface AddSaleModalProps {
   onClose: () => void;
   onSubmit: (data: SaleCreate) => void;
@@ -320,6 +465,8 @@ interface AddSaleModalProps {
 }
 
 const AddSaleModal: React.FC<AddSaleModalProps> = ({ onClose, onSubmit, isLoading }) => {
+  const { isDarkMode } = useTheme();
+  const { t } = useLanguage();
   const [items, setItems] = useState<SaleItem[]>([{ product_name: '', quantity: 1, unit_price: 0, total_price: 0 }]);
   const [subtotal, setSubtotal] = useState(0);
   const [tax, setTax] = useState(0);
@@ -369,162 +516,274 @@ const AddSaleModal: React.FC<AddSaleModalProps> = ({ onClose, onSubmit, isLoadin
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Add New Sale</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className={`
+        rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto
+        ${isDarkMode 
+          ? 'bg-slate-900/90 border-slate-700/50' 
+          : 'bg-white/90 border-white/20'
+        } 
+        backdrop-blur-xl border
+      `}>
+        <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <PlusIcon className="w-5 h-5 text-white" />
+              </div>
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {t('sales.addNewSale')}
+              </h3>
+            </div>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-slate-800 text-slate-400 hover:text-white' 
+                  : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ×
+            </button>
+          </div>
         </div>
         
         <form onSubmit={handleSubmit(handleFormSubmit)} className="p-6 space-y-6">
           {/* Customer Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Customer Name</label>
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {t('sales.customerName')}
+              </label>
               <input
                 type="text"
                 {...register('customer_name')}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                placeholder="Optional"
+                className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                    : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                placeholder={t('sales.optional')}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Customer Email</label>
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {t('sales.customerEmail')}
+              </label>
               <input
                 type="email"
                 {...register('customer_email')}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                placeholder="Optional"
+                className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                  isDarkMode 
+                    ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                    : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                placeholder={t('sales.optional')}
               />
             </div>
           </div>
 
-          {/* Items */}
+          {/* Items Section */}
           <div>
             <div className="flex justify-between items-center mb-4">
-              <label className="block text-sm font-medium text-gray-700">Items</label>
+              <label className={`block text-sm font-medium ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                {t('sales.items')}
+              </label>
               <button
                 type="button"
                 onClick={addItem}
-                className="flex items-center px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg hover:shadow-xl"
               >
-                <PlusIcon className="w-4 h-4 mr-1" />
-                Add Item
+                <PlusIcon className="w-4 h-4" />
+                <span>{t('sales.addItem')}</span>
               </button>
             </div>
             
-            {items.map((item, index) => (
-              <div key={index} className="grid grid-cols-12 gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Product name"
-                  value={item.product_name}
-                  onChange={(e) => updateItem(index, 'product_name', e.target.value)}
-                  className="col-span-5 border border-gray-300 rounded-md px-3 py-2"
-                />
-                <input
-                  type="number"
-                  placeholder="Qty"
-                  value={item.quantity}
-                  onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                  className="col-span-2 border border-gray-300 rounded-md px-3 py-2"
-                />
-                <input
-                  type="number"
-                  placeholder="Price"
-                  step="0.01"
-                  value={item.unit_price}
-                  onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
-                  className="col-span-2 border border-gray-300 rounded-md px-3 py-2"
-                />
-                <input
-                  type="number"
-                  placeholder="Total"
-                  value={item.total_price}
-                  readOnly
-                  className="col-span-2 border border-gray-300 rounded-md px-3 py-2 bg-gray-50"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeItem(index)}
-                  className="col-span-1 text-red-600 hover:text-red-900"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
+            <div className="space-y-3">
+              {items.map((item, index) => (
+                <div key={index} className={`
+                  p-4 rounded-xl border transition-all duration-200
+                  ${isDarkMode 
+                    ? 'bg-slate-800/30 border-slate-700/50' 
+                    : 'bg-white/30 border-slate-200/50'
+                  }
+                `}>
+                  <div className="grid grid-cols-12 gap-3">
+                    <input
+                      type="text"
+                      placeholder={t('sales.productName')}
+                      value={item.product_name}
+                      onChange={(e) => updateItem(index, 'product_name', e.target.value)}
+                      className={`col-span-5 px-3 py-2 rounded-lg border transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400' 
+                          : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    />
+                    <input
+                      type="number"
+                      placeholder={t('sales.qty')}
+                      value={item.quantity}
+                      onChange={(e) => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
+                      className={`col-span-2 px-3 py-2 rounded-lg border transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400' 
+                          : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    />
+                    <input
+                      type="number"
+                      placeholder={t('sales.price')}
+                      step="0.01"
+                      value={item.unit_price}
+                      onChange={(e) => updateItem(index, 'unit_price', parseFloat(e.target.value) || 0)}
+                      className={`col-span-2 px-3 py-2 rounded-lg border transition-all duration-200 ${
+                        isDarkMode 
+                          ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400' 
+                          : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500'
+                      } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+                    />
+                    <input
+                      type="number"
+                      placeholder={t('sales.total')}
+                      value={item.total_price.toFixed(2)}
+                      readOnly
+                      className={`col-span-2 px-3 py-2 rounded-lg border ${
+                        isDarkMode 
+                          ? 'bg-slate-700/50 border-slate-700 text-slate-300' 
+                          : 'bg-slate-100/50 border-slate-200 text-slate-600'
+                      }`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeItem(index)}
+                      className="col-span-1 flex items-center justify-center text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <TrashIcon className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Totals */}
-          <div className="border-t pt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Totals and Payment */}
+          <div className={`border-t pt-6 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700">Tax Amount</label>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t('sales.taxAmount')}
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={tax}
                   onChange={(e) => setTax(parseFloat(e.target.value) || 0)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                      : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Discount</label>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t('sales.discount')}
+                </label>
                 <input
                   type="number"
                   step="0.01"
                   value={discount}
                   onChange={(e) => setDiscount(parseFloat(e.target.value) || 0)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                      : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Payment Method</label>
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+                  {t('sales.paymentMethod')}
+                </label>
                 <select
                   {...register('payment_method', { required: 'Payment method is required' })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                    isDarkMode 
+                      ? 'bg-slate-800/50 border-slate-700 text-white focus:border-blue-500' 
+                      : 'bg-white/50 border-slate-200 text-slate-900 focus:border-blue-500'
+                  } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
                 >
-                  <option value="cash">Cash</option>
-                  <option value="credit_card">Credit Card</option>
-                  <option value="debit_card">Debit Card</option>
-                  <option value="mobile_payment">Mobile Payment</option>
+                  <option value="cash">{t('sales.cash')}</option>
+                  <option value="credit_card">{t('sales.creditCard')}</option>
+                  <option value="debit_card">{t('sales.debitCard')}</option>
+                  <option value="mobile_payment">{t('sales.mobilePayment')}</option>
                 </select>
               </div>
             </div>
             
-            <div className="mt-4 text-right">
-              <div className="text-sm text-gray-600">Subtotal: {formatCurrency(subtotal)}</div>
-              <div className="text-sm text-gray-600">Tax: {formatCurrency(tax)}</div>
-              <div className="text-sm text-gray-600">Discount: -{formatCurrency(discount)}</div>
-              <div className="text-lg font-bold text-gray-900">Total: {formatCurrency(total)}</div>
+            <div className={`p-4 rounded-xl ${
+              isDarkMode ? 'bg-slate-800/30' : 'bg-slate-50/30'
+            }`}>
+              <div className="flex justify-between items-center space-y-2">
+                <div className="space-y-1">
+                  <div className={`flex justify-between text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <span>{t('sales.subtotal')}:</span>
+                    <span>${subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className={`flex justify-between text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <span>{t('sales.tax')}:</span>
+                    <span>${tax.toFixed(2)}</span>
+                  </div>
+                  <div className={`flex justify-between text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                    <span>{t('sales.discount')}:</span>
+                    <span>-${discount.toFixed(2)}</span>
+                  </div>
+                  <div className={`flex justify-between text-lg font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                    <span>{t('sales.total')}:</span>
+                    <span>${total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Notes */}
           <div>
-            <label className="block text-sm font-medium text-gray-700">Notes</label>
+            <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-slate-300' : 'text-slate-700'}`}>
+              {t('sales.notes')}
+            </label>
             <textarea
               {...register('notes')}
               rows={3}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-              placeholder="Optional notes about this sale..."
+              className={`w-full px-4 py-3 rounded-xl border transition-all duration-200 ${
+                isDarkMode 
+                  ? 'bg-slate-800/50 border-slate-700 text-white placeholder-slate-400 focus:border-blue-500' 
+                  : 'bg-white/50 border-slate-200 text-slate-900 placeholder-slate-500 focus:border-blue-500'
+              } focus:outline-none focus:ring-2 focus:ring-blue-500/20`}
+              placeholder={t('sales.notesPlaceholder')}
             />
           </div>
 
           {/* Actions */}
-          <div className="flex justify-end space-x-3">
+          <div className="flex justify-end space-x-4">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className={`px-6 py-3 rounded-xl border transition-all duration-200 ${
+                isDarkMode 
+                  ? 'border-slate-700 text-slate-300 hover:bg-slate-800' 
+                  : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+              }`}
             >
-              Cancel
+              {t('sales.cancel')}
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50"
             >
-              {isLoading ? 'Creating...' : 'Create Sale'}
+              {isLoading ? t('sales.creating') : t('sales.createSale')}
             </button>
           </div>
         </form>
@@ -539,7 +798,10 @@ interface SaleDetailsModalProps {
 }
 
 const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ sale, onClose }) => {
-  const formatCurrency = (amount: number) => {
+  const { isDarkMode } = useTheme();
+  const { t } = useLanguage();
+  
+  const formatCurrencyLocal = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -547,53 +809,115 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ sale, onClose }) =>
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-medium text-gray-900">Sale Details</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+      <div className={`
+        rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto
+        ${isDarkMode 
+          ? 'bg-slate-900/90 border-slate-700/50' 
+          : 'bg-white/90 border-white/20'
+        } 
+        backdrop-blur-xl border
+      `}>
+        <div className={`px-6 py-4 border-b ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                <EyeIcon className="w-5 h-5 text-white" />
+              </div>
+              <h3 className={`text-lg font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {t('sales.saleDetails')}
+              </h3>
+            </div>
+            <button
+              onClick={onClose}
+              className={`p-2 rounded-lg transition-all duration-200 ${
+                isDarkMode 
+                  ? 'hover:bg-slate-800 text-slate-400 hover:text-white' 
+                  : 'hover:bg-slate-100 text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              ×
+            </button>
+          </div>
         </div>
         
         <div className="p-6 space-y-6">
           {/* Sale Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Date</label>
-              <p className="mt-1 text-sm text-gray-900">{new Date(sale.created_at).toLocaleString()}</p>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('sales.date')}
+              </label>
+              <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                {new Date(sale.created_at).toLocaleString()}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Customer</label>
-              <p className="mt-1 text-sm text-gray-900">{sale.customer_name || 'Walk-in Customer'}</p>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('sales.customer')}
+              </label>
+              <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                {sale.customer_name || t('sales.walkInCustomer')}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Payment Method</label>
-              <p className="mt-1 text-sm text-gray-900 capitalize">{sale.payment_method.replace('_', ' ')}</p>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('sales.paymentMethod')}
+              </label>
+              <p className={`text-sm capitalize ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                {sale.payment_method.replace('_', ' ')}
+              </p>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700">Total Amount</label>
-              <p className="mt-1 text-sm font-bold text-gray-900">{formatCurrency(sale.total_amount)}</p>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('sales.total')}
+              </label>
+              <p className={`text-sm font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                {formatCurrencyLocal(sale.total_amount)}
+              </p>
             </div>
           </div>
 
           {/* Items */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Items</label>
-            <div className="border rounded-md overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <label className={`block text-sm font-medium mb-3 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+              {t('sales.items')}
+            </label>
+            <div className={`rounded-xl border overflow-hidden ${
+              isDarkMode ? 'border-slate-700' : 'border-slate-200'
+            }`}>
+              <table className="min-w-full">
+                <thead className={`${isDarkMode ? 'bg-slate-800/50' : 'bg-slate-50/50'}`}>
                   <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Product</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Qty</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Price</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${
+                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}>{t('sales.product')}</th>
+                    <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${
+                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}>{t('sales.qty')}</th>
+                    <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${
+                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}>{t('sales.price')}</th>
+                    <th className={`px-4 py-3 text-left text-xs font-medium uppercase ${
+                      isDarkMode ? 'text-slate-400' : 'text-slate-600'
+                    }`}>{t('sales.total')}</th>
                   </tr>
                 </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
+                <tbody className={`divide-y ${isDarkMode ? 'divide-slate-700' : 'divide-slate-200'}`}>
                   {sale.items?.map((item, index) => (
                     <tr key={index}>
-                      <td className="px-4 py-2 text-sm text-gray-900">{item.product_name}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{item.quantity}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(item.unit_price)}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{formatCurrency(item.total_price)}</td>
+                      <td className={`px-4 py-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                        {item.product_name}
+                      </td>
+                      <td className={`px-4 py-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                        {item.quantity}
+                      </td>
+                      <td className={`px-4 py-3 text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                        {formatCurrencyLocal(item.unit_price)}
+                      </td>
+                      <td className={`px-4 py-3 text-sm font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                        {formatCurrencyLocal(item.total_price)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -602,23 +926,31 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ sale, onClose }) =>
           </div>
 
           {/* Totals */}
-          <div className="border-t pt-4">
-            <div className="text-right space-y-1">
+          <div className={`border-t pt-4 ${isDarkMode ? 'border-slate-700' : 'border-slate-200'}`}>
+            <div className="space-y-2">
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Subtotal:</span>
-                <span className="text-sm text-gray-900">{formatCurrency(sale.total_amount - sale.tax_amount + sale.discount_amount)}</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t('sales.subtotal')}:</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                  {formatCurrencyLocal(sale.total_amount - sale.tax_amount + sale.discount_amount)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Tax:</span>
-                <span className="text-sm text-gray-900">{formatCurrency(sale.tax_amount)}</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t('sales.tax')}:</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                  {formatCurrencyLocal(sale.tax_amount)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Discount:</span>
-                <span className="text-sm text-gray-900">-{formatCurrency(sale.discount_amount)}</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{t('sales.discount')}:</span>
+                <span className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                  -{formatCurrencyLocal(sale.discount_amount)}
+                </span>
               </div>
-              <div className="flex justify-between font-bold text-lg">
-                <span className="text-gray-900">Total:</span>
-                <span className="text-gray-900">{formatCurrency(sale.total_amount)}</span>
+              <div className={`flex justify-between font-bold text-lg pt-2 border-t ${
+                isDarkMode ? 'border-slate-700 text-white' : 'border-slate-200 text-slate-900'
+              }`}>
+                <span>{t('sales.total')}:</span>
+                <span>{formatCurrencyLocal(sale.total_amount)}</span>
               </div>
             </div>
           </div>
@@ -626,8 +958,12 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ sale, onClose }) =>
           {/* Notes */}
           {sale.notes && (
             <div>
-              <label className="block text-sm font-medium text-gray-700">Notes</label>
-              <p className="mt-1 text-sm text-gray-900">{sale.notes}</p>
+              <label className={`block text-sm font-medium mb-1 ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                {t('sales.notes')}
+              </label>
+              <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-900'}`}>
+                {sale.notes}
+              </p>
             </div>
           )}
 
@@ -635,9 +971,9 @@ const SaleDetailsModal: React.FC<SaleDetailsModalProps> = ({ sale, onClose }) =>
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+              className="px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
-              Close
+              {t('sales.close')}
             </button>
           </div>
         </div>
