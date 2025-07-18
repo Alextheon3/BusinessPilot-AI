@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { LanguageProvider } from './contexts/LanguageContext';
@@ -30,7 +30,12 @@ import SupplierMarketplacePage from './pages/SupplierMarketplace';
 import { useAuthStore } from './store/authStore';
 
 function App() {
-  const { user } = useAuthStore();
+  const { user, initializeAuth } = useAuthStore();
+
+  // Initialize authentication on app start
+  useEffect(() => {
+    initializeAuth();
+  }, [initializeAuth]);
 
   if (!user) {
     return (

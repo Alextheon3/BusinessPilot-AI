@@ -25,7 +25,7 @@ const Login: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { setUser } = useAuthStore();
+  const { setUser, mockLogin } = useAuthStore();
   const { t } = useLanguage();
   const { isDarkMode } = useTheme();
 
@@ -44,6 +44,7 @@ const Login: React.FC = () => {
   const onLogin = async (data: LoginForm) => {
     setIsLoading(true);
     try {
+      // Try API login first
       const formData = new FormData();
       formData.append('username', data.email);
       formData.append('password', data.password);
@@ -56,9 +57,17 @@ const Login: React.FC = () => {
 
       const { access_token, user } = response.data;
       setUser(user, access_token);
-      toast.success('Login successful!');
+      toast.success('Επιτυχής σύνδεση! 🇬🇷');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Login failed');
+      // Fallback to mock login for offline development
+      console.log('API login failed, using mock authentication');
+      
+      try {
+        await mockLogin(data.email, data.password);
+        toast.success('Επιτυχής σύνδεση με demo λογαριασμό! 🧪');
+      } catch (mockError) {
+        toast.error(error.response?.data?.detail || 'Αποτυχία σύνδεσης');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -67,12 +76,21 @@ const Login: React.FC = () => {
   const onRegister = async (data: RegisterForm) => {
     setIsLoading(true);
     try {
+      // Try API registration first
       const response = await api.post('/auth/register', data);
       const { access_token, user } = response.data;
       setUser(user, access_token);
-      toast.success('Registration successful!');
+      toast.success('Επιτυχής εγγραφή! 🇬🇷');
     } catch (error: any) {
-      toast.error(error.response?.data?.detail || 'Registration failed');
+      // Fallback to mock registration for offline development
+      console.log('API registration failed, using mock authentication');
+      
+      try {
+        await mockLogin(data.email, 'demo-password');
+        toast.success('Επιτυχής εγγραφή με demo λογαριασμό! 🧪');
+      } catch (mockError) {
+        toast.error(error.response?.data?.detail || 'Αποτυχία εγγραφής');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -92,7 +110,7 @@ const Login: React.FC = () => {
     <div className={`min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 ${
       isDarkMode 
         ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
+        : 'bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50'
     }`}>
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -107,32 +125,32 @@ const Login: React.FC = () => {
       <div className="relative max-w-md w-full space-y-8">
         {/* Header */}
         <div className="text-center">
-          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 ${
+          <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 olympian-glow ${
             isDarkMode 
               ? 'bg-gradient-to-br from-blue-500 to-purple-600' 
               : 'bg-gradient-to-br from-blue-600 to-purple-700'
-          } shadow-lg`}>
+          } shadow-lg divine-entrance`}>
             <SparklesIcon className="w-8 h-8 text-white" />
           </div>
-          <h1 className={`text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
+          <h1 className={`text-4xl font-bold text-greek-hero ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>
             BusinessPilot AI
           </h1>
-          <p className={`mt-3 text-lg ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-            Your all-in-one AI business operations team
+          <p className={`mt-3 text-lg text-subheading-greek ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+            Η ολοκληρωμένη ομάδα AI για τις επιχειρησιακές σας δραστηριότητες
           </p>
         </div>
 
         {/* Main Card */}
-        <div className={`${
+        <div className={`glass-card ${
           isDarkMode 
             ? 'bg-slate-800/50 border-slate-700/50' 
             : 'bg-white/70 border-white/20'
-        } backdrop-blur-xl rounded-2xl shadow-xl border p-8`}>
+        } backdrop-blur-xl rounded-2xl shadow-xl border p-8 divine-entrance`}>
           {/* Tab Navigation */}
           <div className="flex mb-8 p-1 rounded-xl bg-gray-100 dark:bg-slate-700/50">
             <button
               onClick={() => setIsLogin(true)}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+              className={`btn-premium flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
                 isLogin
                   ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
                   : `text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white`
@@ -140,12 +158,12 @@ const Login: React.FC = () => {
             >
               <div className="flex items-center justify-center space-x-2">
                 <LockClosedIcon className="w-4 h-4" />
-                <span>Login</span>
+                <span className="text-body-greek">{t('auth.login')}</span>
               </div>
             </button>
             <button
               onClick={() => setIsLogin(false)}
-              className={`flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
+              className={`btn-premium flex-1 py-3 px-4 text-sm font-medium rounded-lg transition-all duration-200 ${
                 !isLogin
                   ? 'bg-white dark:bg-slate-600 text-blue-600 dark:text-blue-400 shadow-sm'
                   : `text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white`
@@ -153,7 +171,7 @@ const Login: React.FC = () => {
             >
               <div className="flex items-center justify-center space-x-2">
                 <UserIcon className="w-4 h-4" />
-                <span>Sign Up</span>
+                <span className="text-body-greek">{t('auth.register')}</span>
               </div>
             </button>
           </div>
@@ -169,17 +187,41 @@ const Login: React.FC = () => {
                   <div className="w-full border-t border-gray-300" />
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-white text-gray-500">ή συνδεθείτε με email</span>
+                  <span className={`px-2 text-caption-greek ${
+                    isDarkMode ? 'bg-slate-800 text-gray-400' : 'bg-white text-gray-500'
+                  }`}>ή συνδεθείτε με email</span>
+                </div>
+              </div>
+              
+              {/* Test Credentials Info */}
+              <div className={`island-card p-4 rounded-lg border-2 border-dashed ${
+                isDarkMode ? 'border-yellow-500/30 bg-yellow-900/20' : 'border-yellow-400/50 bg-yellow-50/80'
+              }`}>
+                <div className="flex items-center space-x-2 mb-2">
+                  <span className="text-yellow-500">🧪</span>
+                  <h4 className={`text-sm font-semibold text-heading-greek ${
+                    isDarkMode ? 'text-yellow-300' : 'text-yellow-700'
+                  }`}>
+                    Test Credentials
+                  </h4>
+                </div>
+                <div className={`text-xs text-body-greek ${
+                  isDarkMode ? 'text-yellow-200' : 'text-yellow-600'
+                }`}>
+                  <p><strong>Email:</strong> test@businesspilot.ai</p>
+                  <p><strong>Password:</strong> testpassword123</p>
+                  <p className="mt-1 italic">Ή χρησιμοποιήστε τον προ-ρυθμισμένο χρήστη που είναι ήδη συνδεδεμένος!</p>
+                  <p className="mt-1 text-xs opacity-75">💡 Το app λειτουργεί offline με demo δεδομένα!</p>
                 </div>
               </div>
               
               {/* Email Login Form */}
               <form onSubmit={handleLoginSubmit(onLogin)} className="space-y-6">
                 <div>
-                  <label htmlFor="email" className={`block text-sm font-medium mb-2 ${
+                  <label htmlFor="email" className={`block text-sm font-medium mb-2 text-caption-greek ${
                     isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}>
-                    Email address
+                    {t('auth.email')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -190,18 +232,18 @@ const Login: React.FC = () => {
                       type="email"
                       autoComplete="email"
                       {...registerLogin('email', {
-                        required: 'Email is required',
+                        required: t('auth.emailRequired'),
                         pattern: {
                           value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                          message: 'Invalid email address',
+                          message: t('auth.invalidEmail'),
                         },
                       })}
-                      className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      className={`input-premium block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                         isDarkMode
                           ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                       }`}
-                      placeholder="Enter your email"
+                      placeholder="test@businesspilot.ai"
                     />
                   </div>
                   {loginErrors.email && (
@@ -210,10 +252,10 @@ const Login: React.FC = () => {
                 </div>
 
                 <div>
-                  <label htmlFor="password" className={`block text-sm font-medium mb-2 ${
+                  <label htmlFor="password" className={`block text-sm font-medium mb-2 text-caption-greek ${
                     isDarkMode ? 'text-gray-200' : 'text-gray-700'
                   }`}>
-                    Password
+                    {t('auth.password')}
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -224,18 +266,18 @@ const Login: React.FC = () => {
                       type={showPassword ? 'text' : 'password'}
                       autoComplete="current-password"
                       {...registerLogin('password', {
-                        required: 'Password is required',
+                        required: t('auth.passwordRequired'),
                         minLength: {
                           value: 6,
-                          message: 'Password must be at least 6 characters',
+                          message: t('auth.passwordMinLength'),
                         },
                       })}
-                      className={`block w-full pl-10 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
+                      className={`input-premium block w-full pl-10 pr-10 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
                         isDarkMode
                           ? 'bg-slate-700 border-slate-600 text-white placeholder-gray-400'
                           : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
                       }`}
-                      placeholder="Enter your password"
+                      placeholder="testpassword123"
                     />
                     <button
                       type="button"
@@ -258,15 +300,15 @@ const Login: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    className="btn-premium btn-primary w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                   >
                     {isLoading ? (
                       <div className="flex items-center space-x-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        <span>Signing in...</span>
+                        <span className="text-body-greek">{t('auth.signingIn')}</span>
                       </div>
                     ) : (
-                      'Sign in'
+                      <span className="text-body-greek">{t('auth.signIn')}</span>
                     )}
                   </button>
                 </div>

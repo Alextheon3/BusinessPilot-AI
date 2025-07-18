@@ -11,27 +11,18 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { isDarkMode } = useTheme();
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${
+    <div className={`min-h-screen transition-colors ${
       isDarkMode 
-        ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900' 
-        : 'bg-gradient-to-br from-slate-50 via-white to-slate-100'
+        ? 'bg-gray-900' 
+        : 'bg-gray-50'
     }`}>
-      {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-30">
-        <div className={`absolute inset-0 ${
-          isDarkMode 
-            ? 'bg-[radial-gradient(circle_at_50%_50%,rgba(120,119,198,0.1),transparent_70%)]' 
-            : 'bg-[radial-gradient(circle_at_50%_50%,rgba(59,130,246,0.05),transparent_70%)]'
-        }`} />
-      </div>
-      
       <Sidebar />
       
-      <div className="lg:pl-72 relative">
+      <div className="lg:pl-72">
         <Header />
         
         {/* Main Content Area */}
-        <main className="relative">
+        <main className="pt-16">
           {/* Content Container */}
           <div className="px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
             {/* Page Content */}
@@ -41,14 +32,6 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </main>
       </div>
-      
-      {/* Floating Elements for Polish */}
-      <div className={`fixed top-4 right-4 w-2 h-2 rounded-full ${
-        isDarkMode ? 'bg-blue-400' : 'bg-blue-500'
-      } opacity-20 animate-pulse`} />
-      <div className={`fixed bottom-4 left-4 w-1 h-1 rounded-full ${
-        isDarkMode ? 'bg-purple-400' : 'bg-purple-500'
-      } opacity-30 animate-pulse`} style={{ animationDelay: '1s' }} />
     </div>
   );
 };

@@ -38,12 +38,12 @@ const GlassCard: React.FC<GlassCardProps> = ({ children, className = '', glow = 
   
   return (
     <div className={`
-      relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-[1.02] 
+      glass-card relative overflow-hidden rounded-2xl border transition-all duration-300 hover:scale-[1.02] divine-entrance
       ${isDarkMode 
         ? 'bg-slate-800/40 border-slate-700/50 backdrop-blur-xl' 
         : 'bg-white/40 border-white/20 backdrop-blur-xl'
       } 
-      ${glow ? 'shadow-2xl shadow-blue-500/10' : 'shadow-xl shadow-black/5'}
+      ${glow ? 'shadow-2xl shadow-blue-500/10 olympian-glow' : 'shadow-xl shadow-black/5'}
       ${className}
     `}>
       {glow && (
@@ -73,7 +73,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, icon, tre
     <GlassCard className="group">
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${color} shadow-lg`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${color} shadow-lg olympian-glow`}>
             {icon}
           </div>
           {change !== undefined && (
@@ -95,18 +95,18 @@ const MetricCard: React.FC<MetricCardProps> = ({ title, value, change, icon, tre
         </div>
         
         <div className="space-y-1">
-          <h3 className={`text-sm font-medium ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+          <h3 className={`text-sm font-medium text-caption-greek ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
             {title}
           </h3>
           <div className="flex items-baseline space-x-2">
             {loading ? (
               <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.1s' }} />
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse olympian-glow" />
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse olympian-glow" style={{ animationDelay: '0.1s' }} />
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse olympian-glow" style={{ animationDelay: '0.2s' }} />
               </div>
             ) : (
-              <p className={`text-3xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+              <p className={`text-3xl font-bold text-heading-greek ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                 {value}
               </p>
             )}
@@ -152,17 +152,17 @@ const AlertCard: React.FC<AlertCardProps> = ({ title, items, type, loading }) =>
   const Icon = config.icon;
   
   return (
-    <GlassCard className={`border-2 ${config.border}`}>
+    <GlassCard className={`border-2 ${config.border} wave-animation`}>
       <div className={`absolute inset-0 bg-gradient-to-r ${config.bg} opacity-50`} />
       <div className="relative z-10 p-6">
         <div className="flex items-center space-x-3 mb-4">
           <Icon className={`w-5 h-5 ${config.iconColor}`} />
-          <h3 className={`font-semibold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+          <h3 className={`font-semibold text-heading-greek ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
             {title} ({items.length})
           </h3>
           <div className="flex items-center space-x-1">
-            <div className={`w-2 h-2 rounded-full ${config.iconColor.replace('text-', 'bg-')} animate-pulse`} />
-            <span className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+            <div className={`w-2 h-2 rounded-full ${config.iconColor.replace('text-', 'bg-')} animate-pulse olympian-glow`} />
+            <span className={`text-xs text-caption-greek ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
               Live
             </span>
           </div>
@@ -179,10 +179,10 @@ const AlertCard: React.FC<AlertCardProps> = ({ title, items, type, loading }) =>
             items.slice(0, 3).map((item: any, index: number) => (
               <div key={index} className="flex items-center justify-between py-2 px-3 rounded-lg bg-white/20 dark:bg-slate-800/20">
                 <div className="flex-1">
-                  <p className={`text-sm font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
+                  <p className={`text-sm font-medium text-body-greek ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
                     {item.product_name || item.title || item.supplier_name}
                   </p>
-                  <p className={`text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
+                  <p className={`text-xs text-caption-greek ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                     {item.current_stock !== undefined ? `${item.current_stock}/${item.min_stock}` : 
                      item.amount !== undefined ? `€${item.amount.toFixed(2)}` : 
                      item.date ? new Date(item.date).toLocaleDateString() : ''}
